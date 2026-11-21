@@ -89,6 +89,7 @@ export default function App() {
       location: crop.location,
       status: crop.status,
     })
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   function cancelEdit() {
@@ -134,8 +135,8 @@ export default function App() {
       const saved: CropListing = await res.json()
       setNotice(
         isEdit
-          ? `Updated listing #${saved.id} (${saved.crop_name})`
-          : `Created listing #${saved.id} (${saved.crop_name})`
+          ? `Updated listing #${saved.id} (${saved.crop_name}) successfully.`
+          : `Published new listing #${saved.id} (${saved.crop_name}) successfully.`
       )
       if (selectedCrop?.id === saved.id) {
         setSelectedCrop(saved)
@@ -162,155 +163,301 @@ export default function App() {
       if (editingId === id) {
         cancelEdit()
       }
-      setNotice(`Deleted listing #${id}`)
+      setNotice(`Deleted crop listing #${id}.`)
       await loadCrops()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete failed")
     }
   }
 
+  const availableCount = crops.filter((c) => c.status === "available").length
+  const totalQuantityKg = crops.reduce((sum, c) => sum + Number(c.quantity_kg || 0), 0)
+  const totalMarketValue = crops.reduce(
+    (sum, c) => sum + Number(c.quantity_kg || 0) * Number(c.price_per_kg || 0),
+    0
+  )
+
   return (
-    <main className="mvp-container">
-      <header className="mvp-header">
-        <div>
-          <h1>DigitalFarmers — Crop Listings MVP</h1>
-          <p className="subtitle">Create, Read Single, Read List, Update, and Delete produce listings</p>
+    <>
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div>
+            <span className="brand-badge">Direct Farm-to-Market Exchange</span>
+            <h1>DigitalFarmers Produce Marketplace</h1>
+            <p className="subtitle">
+              Manage harvest inventory, unit pricing, and live availability across districts
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-light"
+            onClick={() => void loadCrops()}
+            disabled={loading}
+          >
+            {loading ? "Syncing..." : "Refresh Listings"}
+          </button>
         </div>
-        <button type="button" onClick={() => void loadCrops()} disabled={loading}>
-          {loading ? "Refreshing..." : "Refresh List"}
-        </button>
       </header>
 
-      {error && <div className="alert error">{error}</div>}
-      {notice && <div className="alert success">{notice}</div>}
-
-      <section className="panel">
-        <h2>{editingId !== null ? `Edit Crop Listing #${editingId}` : "Add New Crop Listing"}</h2>
-        <form className="crop-form" onSubmit={handleSubmit}>
-          <input
-            value={form.farmer_name}
-            onChange={(e) => setForm({ ...form, farmer_name: e.target.value })}
-            placeholder="Farmer Name"
-            required
-          />
-          <input
-            value={form.crop_name}
-            onChange={(e) => setForm({ ...form, crop_name: e.target.value })}
-            placeholder="Crop Name (e.g., Aman Rice)"
-            required
-          />
-          <input
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            placeholder="Category (e.g., Grains, Vegetables)"
-            required
-          />
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={form.quantity_kg}
-            onChange={(e) => setForm({ ...form, quantity_kg: e.target.value })}
-            placeholder="Quantity (kg)"
-            required
-          />
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={form.price_per_kg}
-            onChange={(e) => setForm({ ...form, price_per_kg: e.target.value })}
-            placeholder="Price per kg (BDT)"
-            required
-          />
-          <input
-            value={form.location}
-            onChange={(e) => setForm({ ...form, location: e.target.value })}
-            placeholder="District / Location"
-            required
-          />
-          <select
-            value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value as CropFormState["status"] })}
-          >
-            <option value="available">available</option>
-            <option value="reserved">reserved</option>
-            <option value="sold">sold</option>
-          </select>
-          <div className="form-actions">
-            <button type="submit" disabled={submitting}>
-              {submitting ? "Saving..." : editingId !== null ? "Update Listing" : "Create Listing"}
-            </button>
-            {editingId !== null && (
-              <button type="button" onClick={cancelEdit}>
-                Cancel
-              </button>
-            )}
+      <main className="mvp-container">
+        <section className="stats-grid" aria-label="Marketplace Summary">
+          <div className="stat-card">
+            <span className="stat-label">Total Listings</span>
+            <span className="stat-value">{crops.length}</span>
           </div>
-        </form>
-      </section>
-
-      {selectedCrop && (
-        <section className="panel detail-card">
-          <div className="detail-top">
-            <h2>Single Crop Details (#{selectedCrop.id})</h2>
-            <button type="button" onClick={() => setSelectedCrop(null)}>
-              Close
-            </button>
+          <div className="stat-card">
+            <span className="stat-label">Available Batches</span>
+            <span className="stat-value">{availableCount}</span>
           </div>
-          <p>
-            <strong>Crop:</strong> {selectedCrop.crop_name} ({selectedCrop.category})
-          </p>
-          <p>
-            <strong>Farmer:</strong> {selectedCrop.farmer_name} — {selectedCrop.location}
-          </p>
-          <p>
-            <strong>Quantity:</strong> {selectedCrop.quantity_kg} kg @ ৳{selectedCrop.price_per_kg}/kg
-          </p>
-          <p>
-            <strong>Status:</strong> {selectedCrop.status}
-          </p>
-          <p className="meta">
-            Created: {selectedCrop.created_at} | Updated: {selectedCrop.updated_at}
-          </p>
+          <div className="stat-card amber">
+            <span className="stat-label">Total Stock</span>
+            <span className="stat-value">{totalQuantityKg.toLocaleString()} kg</span>
+          </div>
+          <div className="stat-card amber">
+            <span className="stat-label">Catalog Value</span>
+            <span className="stat-value">৳{totalMarketValue.toLocaleString()}</span>
+          </div>
         </section>
-      )}
 
-      <section className="panel">
-        <h2>All Crop Listings ({crops.length})</h2>
-        {crops.length === 0 && !loading ? (
-          <p>No crop listings found. Create one above.</p>
-        ) : (
-          <div className="list-grid">
-            {crops.map((crop) => (
-              <article key={crop.id} className="crop-card">
-                <div>
-                  <h3>
-                    #{crop.id} {crop.crop_name}
-                  </h3>
-                  <p>
-                    {crop.farmer_name} • {crop.location} • <strong>{crop.status}</strong>
-                  </p>
-                  <p>
-                    {crop.quantity_kg} kg — <strong>৳{crop.price_per_kg}/kg</strong> ({crop.category})
-                  </p>
-                </div>
-                <div className="card-actions">
-                  <button type="button" onClick={() => void handleViewSingle(crop.id)}>
-                    View
-                  </button>
-                  <button type="button" onClick={() => startEdit(crop)}>
-                    Edit
-                  </button>
-                  <button type="button" onClick={() => void handleDelete(crop.id)}>
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
+        {error && <div className="alert error">{error}</div>}
+        {notice && <div className="alert success">{notice}</div>}
+
+        <section className="panel">
+          <div className="panel-header">
+            <h2>{editingId !== null ? `Edit Crop Listing #${editingId}` : "Publish New Crop Listing"}</h2>
+            <span className="panel-hint">
+              {editingId !== null
+                ? "Modify fields below and save changes"
+                : "Enter harvest details to list produce"}
+            </span>
           </div>
+
+          <form className="crop-form" onSubmit={handleSubmit}>
+            <div className="field-group">
+              <label htmlFor="farmer_name">Farmer Name</label>
+              <input
+                id="farmer_name"
+                value={form.farmer_name}
+                onChange={(e) => setForm({ ...form, farmer_name: e.target.value })}
+                placeholder="e.g., Karim Mia"
+                required
+              />
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="crop_name">Crop / Produce Name</label>
+              <input
+                id="crop_name"
+                value={form.crop_name}
+                onChange={(e) => setForm({ ...form, crop_name: e.target.value })}
+                placeholder="e.g., Miniket Rice"
+                required
+              />
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="category">Category</label>
+              <select
+                id="category"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              >
+                <option value="Vegetables">Vegetables</option>
+                <option value="Grains">Grains</option>
+                <option value="Fruits">Fruits</option>
+                <option value="Spices">Spices</option>
+                <option value="Pulses">Pulses</option>
+              </select>
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="quantity_kg">Quantity (kg)</label>
+              <input
+                id="quantity_kg"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={form.quantity_kg}
+                onChange={(e) => setForm({ ...form, quantity_kg: e.target.value })}
+                placeholder="e.g., 150"
+                required
+              />
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="price_per_kg">Price per kg (BDT)</label>
+              <input
+                id="price_per_kg"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={form.price_per_kg}
+                onChange={(e) => setForm({ ...form, price_per_kg: e.target.value })}
+                placeholder="e.g., 60"
+                required
+              />
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="location">District / Location</label>
+              <input
+                id="location"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                placeholder="e.g., Bogura"
+                required
+              />
+            </div>
+
+            <div className="field-group">
+              <label htmlFor="status">Availability Status</label>
+              <select
+                id="status"
+                value={form.status}
+                onChange={(e) =>
+                  setForm({ ...form, status: e.target.value as CropFormState["status"] })
+                }
+              >
+                <option value="available">Available</option>
+                <option value="reserved">Reserved</option>
+                <option value="sold">Sold</option>
+              </select>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={submitting}>
+                {submitting
+                  ? "Saving..."
+                  : editingId !== null
+                    ? "Save Changes"
+                    : "Create Listing"}
+              </button>
+              {editingId !== null && (
+                <button type="button" className="btn-secondary" onClick={cancelEdit}>
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        {selectedCrop && (
+          <section className="panel detail-card">
+            <div className="panel-header">
+              <h2>
+                Single Crop Inspection — #{selectedCrop.id} {selectedCrop.crop_name}
+              </h2>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setSelectedCrop(null)}
+              >
+                Close Details
+              </button>
+            </div>
+
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span>Crop &amp; Category</span>
+                <strong>
+                  {selectedCrop.crop_name} ({selectedCrop.category})
+                </strong>
+              </div>
+              <div className="detail-item">
+                <span>Farmer</span>
+                <strong>{selectedCrop.farmer_name}</strong>
+              </div>
+              <div className="detail-item">
+                <span>District</span>
+                <strong>{selectedCrop.location}</strong>
+              </div>
+              <div className="detail-item">
+                <span>Available Quantity</span>
+                <strong>{selectedCrop.quantity_kg} kg</strong>
+              </div>
+              <div className="detail-item">
+                <span>Unit Price</span>
+                <strong>৳{selectedCrop.price_per_kg} / kg</strong>
+              </div>
+              <div className="detail-item">
+                <span>Status</span>
+                <strong>{selectedCrop.status.toUpperCase()}</strong>
+              </div>
+            </div>
+
+            <p className="meta-footer">
+              Created: {new Date(selectedCrop.created_at).toLocaleString()} • Last Updated:{" "}
+              {new Date(selectedCrop.updated_at).toLocaleString()}
+            </p>
+          </section>
         )}
-      </section>
-    </main>
+
+        <section className="panel">
+          <div className="panel-header">
+            <h2>Active Produce Directory ({crops.length})</h2>
+            <span className="panel-hint">Click View to inspect single record via GET /api/crops/:id</span>
+          </div>
+
+          {crops.length === 0 && !loading ? (
+            <div className="empty-state">
+              No crop listings available yet. Use the form above to publish the first harvest.
+            </div>
+          ) : (
+            <div className="list-grid">
+              {crops.map((crop) => (
+                <article key={crop.id} className="crop-card">
+                  <div>
+                    <div className="crop-card-top">
+                      <span className="crop-id">ID #{crop.id}</span>
+                      <span className={`status-badge status-${crop.status}`}>
+                        {crop.status}
+                      </span>
+                    </div>
+
+                    <h3>{crop.crop_name}</h3>
+                    <span className="category-tag">{crop.category}</span>
+
+                    <p className="crop-meta">
+                      <strong>Farmer:</strong> {crop.farmer_name}
+                      <br />
+                      <strong>Location:</strong> {crop.location}
+                    </p>
+
+                    <div className="price-row">
+                      <span className="price-main">৳{crop.price_per_kg} / kg</span>
+                      <span className="qty-text">{crop.quantity_kg} kg available</span>
+                    </div>
+                  </div>
+
+                  <div className="card-actions">
+                    <button
+                      type="button"
+                      className="btn-view"
+                      onClick={() => void handleViewSingle(crop.id)}
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-edit"
+                      onClick={() => startEdit(crop)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-delete"
+                      onClick={() => void handleDelete(crop.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </>
   )
 }
