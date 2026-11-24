@@ -1,8 +1,12 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/main.py" },
-    { "source": "/docs", "destination": "/backend/main.py" },
-    { "source": "/openapi.json", "destination": "/backend/main.py" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "https://digitalfarmers-2331515-1.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
