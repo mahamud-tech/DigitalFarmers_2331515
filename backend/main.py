@@ -107,6 +107,11 @@ def _public_user(u: dict) -> dict:
     }
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {"status": "ok", "service": "DigitalFarmers API v2", "docs": "/docs", "health": "/api/health"}
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "DigitalFarmers API v2"}
