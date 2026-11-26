@@ -13,10 +13,11 @@ from config import (
     PASSWORD_PEPPER,
 )
 from db import sb_insert
-
+#salt that is used for random value that is generate autometically .
+#Creates an Argon2 password hasher instance that automatically generates a unique random salt per password and embeds the salt inside the resulting hash string.
 _ph = PasswordHasher()
 
-
+#paper
 def _apply_pepper(plain_password: str) -> str:
     return hmac.new(
         PASSWORD_PEPPER.encode("utf-8"),
@@ -37,7 +38,7 @@ def verify_password(plain_password: str, password_hash: str) -> bool:
     except Exception:
         return False
 
-
+#jwt token create and decode 
 def create_access_token(user_id: str, role: str, session_id: str) -> str:
     now = datetime.now(timezone.utc)
     payload = {
@@ -50,7 +51,8 @@ def create_access_token(user_id: str, role: str, session_id: str) -> str:
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
-
+#এই function JWT যাচাই করে।
+#user id ,role,sesion 
 def decode_access_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
@@ -61,7 +63,7 @@ def decode_access_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Access token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or tampered token")
-
+#এটি secure random refresh token তৈরি করে।
 
 def generate_refresh_token() -> str:
     return secrets.token_urlsafe(48)
@@ -77,7 +79,7 @@ def get_client_meta(request: Request) -> tuple[str, str]:
     ua = request.headers.get("user-agent", "unknown")[:250]
     return ip, ua
 
-
+#Collects client IP and user-agent metadata
 async def log_audit(
     request: Request,
     action: str,

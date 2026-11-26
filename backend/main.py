@@ -165,6 +165,9 @@ async def register(payload: RegisterRequest, request: Request, response: Respons
     await log_audit(request, "register", user["id"], email, "user", user["id"], "New user registered")
     return {"access_token": access_token, "token_type": "bearer", "user": _public_user(user)}
 
+#loggin 
+
+
 
 @app.post("/api/auth/login")
 async def login(payload: LoginRequest, request: Request, response: Response):
@@ -268,6 +271,9 @@ async def refresh_session(request: Request, response: Response):
     access_token = create_access_token(user["id"], user["role"], session["id"])
     _set_refresh_cookie(response, new_raw_refresh)
     return {"access_token": access_token, "token_type": "bearer", "user": _public_user(user)}
+
+#logout
+
 
 
 @app.post("/api/auth/logout")
@@ -730,6 +736,11 @@ async def delete_crop(
 # ==========================================
 # 4. ADMIN DASHBOARD, MODERATION, AUDIT & CSV EXPORTS
 # ==========================================
+#bann
+
+
+
+
 @app.get("/api/admin/overview")
 async def admin_overview(admin: dict = Depends(require_role(ROLE_ADMIN))):
     users = await sb_select("users", "select=id,is_banned,created_at")
@@ -832,6 +843,9 @@ async def admin_ban_user(
     )
     return {"banned": True, "user_id": user_id}
 
+#unbann
+
+
 
 @app.post("/api/admin/users/{user_id}/unban")
 async def admin_unban_user(
@@ -872,6 +886,8 @@ async def admin_change_role(
         f"Changed role of {target['email']} to {payload.role}",
     )
     return {"updated": True, "role": payload.role}
+
+#revoke
 
 
 @app.post("/api/admin/users/{user_id}/revoke-sessions")

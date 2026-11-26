@@ -18,7 +18,7 @@ PERM_CROPS_DELETE = "crops:delete"
 GROUP_PERM_CREATE = "create"
 GROUP_PERM_EDIT = "edit"
 GROUP_PERM_ASSIGN = "assign"
-
+#কোন user কী কী কাজ করতে পারবে, তা নির্ধারণ করে।
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     ROLE_USER: {PERM_CROPS_READ, PERM_CROPS_CREATE, PERM_CROPS_EDIT, PERM_CROPS_DELETE},
     ROLE_ADMIN: {
@@ -30,7 +30,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     },
 }
 
-
+#Reads the Bearer token, decodes it, checks if the session was revoked or the user is banned (403), and returns the active user.
 async def get_current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> dict:
@@ -49,7 +49,7 @@ async def get_current_user(
     users = await sb_select("users", f"id=eq.{user_id}&select=*")
     if not users:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-
+#baannnnn
     user = users[0]
     if user.get("is_banned"):
         raise HTTPException(

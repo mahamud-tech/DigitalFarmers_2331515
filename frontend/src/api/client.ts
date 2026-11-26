@@ -37,6 +37,8 @@ export async function apiFetch(
     headers.set("Content-Type", "application/json")
   }
 
+
+  
   let res = await fetch(path, {
     ...options,
     headers,
